@@ -1,4 +1,23 @@
 # -*- coding: utf-8 -*-
+"""ARGUS AI sozlamalari.
+
+MUNDARIJA (bo'limlar shu tartibda):
+  1. Yo'llar va qurilma identifikatori
+  2. Funksiyalarni yoqish/o'chirish (ENABLE_*)
+  3. Odam aniqlash, telefon modeli
+  4. Uyqu: ko'z (EAR, eyeBlink), mikrouyqu, PERCLOS, pirpirash, silliqlash
+  5. Esnash, chalg'ish, kamera to'silishi (tamper)
+  6. Rasm/video yozuv, dataset
+  7. GPS / lokomotiv, harakat qoidalari (GPS_GATED_TAGS, STOPPED_ADMIN_ONLY)
+  8. Kayfiyat, Telegram (secrets.json), hisobotlar, sayt (webhook)
+  9. Qayta tekshirish (CONFIRM), ruxsat vaqti (GRACE), epizod (REJOIN)
+ 10. device.json (IMEI, qurilma nomi), ko'p qurilma, tozalash
+ 11. config_local.py — QURILMAGA XOS qiymatlar (fayl oxirida yuklanadi)
+
+QOIDA: bu fayl barcha qurilmalarda BIR XIL. Qurilmaga xos farqlar (masalan
+lokda telefon/odam aniqlash o'chiq) `config_local.py` ga yoziladi — u
+git'ga kirmaydi, namuna: config_local.example.py. Tokenlar: secrets.json.
+"""
 """ARGUS AI — barcha sozlamalar shu yerda.
 
 Modullar bu fayldan `from config import *` bilan o'qiydi.
@@ -217,9 +236,9 @@ DISTRACT_SEC = 3.0          # shuncha s uzluksiz → CHALG'ISH
 BASE_MIN = 45               # baza mediana uchun kamida shuncha namuna (isinish)
 # Kamera to'silishi (tamper) — kadr o'rtacha yorug'ligi past YOKI tafsiloti (Laplacian
 # dispersiyasi) past bo'lса → to'silган (qo'l/lenta bilan yopilган, qorong'i).
-TAMPER_DARK_MEAN = 40.0     # o'rtacha yorug'lik shundan past → qorong'i
-TAMPER_DETAIL_VAR = 55.0    # Laplacian dispersiyasi shundan past → tafsilotsiz
-TAMPER_SEC = 2.5            # shuncha s uzluksiz to'silган → signal
+TAMPER_DARK_MEAN = 15.0     # o'rtacha yorug'lik shundan past → qorong'i (lok 2026-09-25: tunda 13.7 normal)
+TAMPER_DETAIL_VAR = 20.0    # Laplacian dispersiyasi shundan past → tafsilotsiz (lok tunda 27-42 normal)
+TAMPER_SEC = 8.0            # shuncha s uzluksiz to'silgan → signal (qisqa qorong'ilashish emas)
 
 # ── Rasm va video yozib olish ──
 RECORD_DIR = os.path.join(HERE, "records")
@@ -531,3 +550,13 @@ TELEGRAM_MAX_RETRY_WAIT = 300.0
 # necha kun uzilib qolsa, yuborilmagan dalil yo'qolib ketmasligi kerak.
 RECORD_KEEP_DAYS = 5
 RECORD_CLEAN_EVERY = 3600.0    # tekshirish oralig'i (s)
+
+# ── 11. QURILMAGA XOS qiymatlar: config_local.py (git'da YO'Q) ──────────────
+# Faqat ODDIY qiymatlar (True/False, son, matn). Boshqa qiymatdan hisoblangan
+# sozlamalar (yo'llar, HERE) bu yerda qayta hisoblanmaydi.
+# Namuna: config_local.example.py. Lokda: ENABLE_PHONE=False, ENABLE_PERSON=False.
+try:
+    from config_local import *   # noqa: F401,F403
+    _LOCAL_CONFIG = True
+except ImportError:
+    _LOCAL_CONFIG = False
