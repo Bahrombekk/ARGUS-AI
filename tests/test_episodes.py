@@ -46,16 +46,20 @@ def run(pattern, fps=18.0, stopped=False):
     ctx = RunContext("Lok-TEST"); ctx.stopped_route = stopped
     ep = EpisodeTracker(tg, web, None, rec, day, ctx)
     describe = lambda tag, now, fr: "\nYuz ko'rinmagan: 4.7 s"
-    now = 0.0; clips = []
+    now = 0.0; clips = []; closed = []
     for dur, rep in pattern:
         for _ in range(int(dur * fps)):
             now += 1.0 / fps
             ep.update(set(rep), now, describe, None)
-            if ep.episode_started:
-                rec.path = "rec_%d.mp4" % len(clips); clips.append(rec.path)   # klip ochildi
+            # haqiqiy recorder: rep faol bo'lganda klip ochiq; bo'sh bo'lsa (POST dan
+            # keyin) yopiladi -> keyingi faollikda YANGI fayl ochiladi
+            if rep and rec.path is None:
+                rec.path = "rec_%d.mp4" % len(clips); clips.append(rec.path)
             ep.attach_media(lambda: "EV", set(rep), now)
-    # kliplar yopildi -> on_clip
-    for p in clips:
+            if not rep and rec.path is not None:
+                closed.append(rec.path); rec.path = None
+    # yopilgan kliplar -> on_clip (ochiq qolgani ham)
+    for p in closed + ([rec.path] if rec.path else []):
         rec.on_clip(p)
     return tg, web, day, ep, clips
 
@@ -64,7 +68,7 @@ def run(pattern, fps=18.0, stopped=False):
 pat = [(6, {"yuz"}), (2, set())] * 8 + [(180, set())]
 tg, web, day, ep, clips = run(pat)
 uids = {u for _, u, _ in web.calls if u}
-print("pirpirash: matn=%d rasm=%d video=%d tugadi=%d | sayt=%d | uid=%d | klip=%d" % (
+print("pirpirash: matn=%d rasm=%d video=%d tugadi=%d | sayt=%d | uid=%d | klip=%d (yozilgan)" % (
     sum(1 for t, _ in tg.text if "Buzilish" in t), len(tg.photo), len(tg.video),
     sum(1 for t, _ in tg.text if "Tugadi" in t), len(web.calls), len(uids), len(clips)))
 assert sum(1 for t, _ in tg.text if "Buzilish" in t) == 1
@@ -73,6 +77,7 @@ assert sum(1 for t, _ in tg.text if "Tugadi" in t) == 1
 end = [t for t, _ in tg.text if "Tugadi" in t][0]
 assert "1 daq" in end or "62" in end or "1.0" in end, end   # davomiylik ~62 s (8*8-2), ushlab turish oynasisiz
 assert day.inc == ["yuz"]
+assert len(clips) == 8, len(clips)     # 8 ta klip yozildi, faqat 1 tasi yuborildi
 
 # 2) ikki alohida hodisa (orasi 3 daq) -> 2 epizod, 2 rasm, 2 video
 tg, web, day, ep, clips = run([(10, {"yuz"}), (180, set()), (10, {"yuz"}), (180, set())])

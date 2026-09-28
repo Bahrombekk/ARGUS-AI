@@ -201,6 +201,13 @@ class EpisodeTracker:
             else:
                 self.pending_uid = self.cur_uid
                 self.pending_det = self.cur_detail
+        # Ushlab turilgan epizod ichida yuz qayta yo'qolib YANGI klip ochilsa,
+        # u ham joriy ID ga bog'lanadi — aks holda ID'siz ketib, "bir epizodga
+        # bitta video" filtri uni tanimasdi (2026-09-28 18:19-18:22: 5 ta ID'siz video).
+        if (self.held_active and self.cur_uid and rec.path
+                and rec.path not in self.clip_uids and self.pending_uid is None):
+            self.clip_uids[rec.path] = self.cur_uid
+            self.clip_det[rec.path] = self.cur_detail
         self.prev_active = bool(self.held_active)
         self.episode_started = False
 
