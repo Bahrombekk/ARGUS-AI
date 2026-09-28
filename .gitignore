@@ -1,0 +1,23 @@
+# Maxfiy / qurilmaga xos fayllar — git'ga KIRMAYDI
+secrets.json
+gps_creds.json
+subscribers.json
+device.json
+seat_roi.json
+seat_roi.json.bak
+deploy_note.txt
+
+# Ish vaqtidagi holat va dalillar
+records/
+logs/
+dataset/
+outbox.json
+web_outbox.json
+day_stats.json
+*.bak
+*.bak_*
+*.tmp
+
+# Python
+__pycache__/
+*.pyc
