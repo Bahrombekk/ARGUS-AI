@@ -369,6 +369,11 @@ INCIDENT_REPEAT = False
 INCIDENT_END_MSG = True
 # Qisqa epizodga "tugadi" xabari ortiqcha — boshlanish xabari yetarli.
 INCIDENT_END_MIN = 30.0     # shundan uzoq davom etgan holatgagina yuboriladi
+# Bir turdagi buzilish shu s ichida QAYTSA — o'sha epizod davom etadi: bitta
+# ID, yangi rasm/video yo'q; epizod shu s tinch turgandan keyin yopiladi va
+# "tugadi" xabari (davomiylik oxirgi faol vaqtgacha) ketadi. 2026-09-28:
+# yuz pirpiraganda 4 daqiqada 8 epizod (16 ta media) ketgan edi.
+INCIDENT_REJOIN_SEC = 120.0
 TXT_END = ("\u2705 [{dev}] Tugadi: {label}\n"
            "Davomiyligi: {dur}\n"
            "Vaqt: {vaqt}\n"

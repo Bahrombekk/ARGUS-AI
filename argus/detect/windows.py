@@ -39,3 +39,38 @@ class Sustain:
         else:
             self.since = None; self.latched = False
         return self.latched
+
+
+class EpisodeHold:
+    """Epizodni 'ushlab turish': tur faol ro'yxatdan chiqsa ham, `hold` s
+    davomida epizod OCHIQ hisoblanadi. Shu oynada tur qaytsa — o'sha epizod
+    davom etadi (bitta ID, yangi rasm/video yo'q).
+
+    Nega kerak (2026-09-28 08:35-08:39): yuz bir lahzaga topilib yana
+    yo'qolganda 4 daqiqada 8 ta alohida "yuz" epizodi ochildi — har biriga
+    rasm + video (16 ta media). Matn 120 s cheklovda edi, media esa yo'q."""
+
+    def __init__(self, hold):
+        self.hold = float(hold)
+        self.last_seen = {}          # tur -> oxirgi faol vaqt
+        self.ended = {}              # tur -> yopilgan epizodning oxirgi faol vaqti
+
+    def update(self, active, now):
+        """active — hozir faol turlar. Qaytadi: ushlab turilgan turlar to'plami."""
+        for t in active:
+            self.last_seen[t] = now
+        held = set()
+        for t, ts in list(self.last_seen.items()):
+            if now - ts <= self.hold:
+                held.add(t)
+            else:
+                self.ended[t] = ts       # yopilish kadrida davomiylik uchun
+                del self.last_seen[t]
+        return held
+
+    def seen(self, tag, default=None):
+        """Oxirgi faol vaqt — ochiq epizod bo'lsa undan, yopilgan bo'lsa
+        yopilish paytidagi qiymatdan (ushlab turish oynasi hisobga kirmaydi)."""
+        if tag in self.last_seen:
+            return self.last_seen[tag]
+        return self.ended.get(tag, default)

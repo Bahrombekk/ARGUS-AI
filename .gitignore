@@ -21,3 +21,4 @@ day_stats.json
 # Python
 __pycache__/
 *.pyc
+tests/_*
