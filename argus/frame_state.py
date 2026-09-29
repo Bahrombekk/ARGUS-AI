@@ -36,7 +36,7 @@ class FrameResult:
                  "perclos_val", "perclos_warn", "perclos_crit", "blink_ms",
                  "blink_slow", "distract_al", "tamper_al", "person_present",
                  "noface_al", "absent_al", "phone_al", "smoke_al", "belt_al",
-                 "active", "zoom_ear", "zoom_bs", "zoom_veto")
+                 "active", "zoom_ear", "zoom_bs", "zoom_veto", "standing", "stand_al")
 
     def __init__(self):
         for k in self.__slots__:
@@ -62,6 +62,7 @@ class FrameAnalyzer:
                                   TAMPER_DROP_MIN, TAMPER_DROP_FRAC, TAMPER_DETAIL_REF,
                                   TAMPER_EMA_ALPHA)
         self.noface_sus = Sustain(NOFACE_SEC)
+        self.stand_sus = Sustain(STAND_SEC)     # tik turgan: uzoqroq ostona
         # Yangi buzilishni e'lon qilishdan oldin qayta tasdiqlash
         self.confirm = Confirm(CONFIRM_SEC, CONFIRM_TAGS) if CONFIRM_SEC > 0 else None
         # Ruxsat etilgan vaqt (telefon 3 daqiqa) — ovoz ishlaydi, xabar kutadi
@@ -250,17 +251,23 @@ class FrameAnalyzer:
 
         # Kamera soz, lekin yuz yo'q — odam bormi yoki chiqib ketganmi?
         # persondet FAQAT shu holatda ishlaydi (yuz bor bo'lsa chaqirilmaydi).
+        standing = False
         if face_found:
             person_present = True
             if self.persondet is not None:
                 self.persondet.present = True        # holat yangilanib turadi
+                self.persondet.standing = False
         elif self.persondet is not None and not blocked:
             person_present = self.persondet.update(frame, now)
+            # Odam bor, boshi kadr tepasidan chiqqan -> o'rnidan turgan (qo'l uzatish,
+            # tugma) — bu yuzni to'sish emas; alohida, uzoq ostonali tur.
+            standing = bool(person_present and getattr(self.persondet, "standing", False))
         else:
             person_present = True               # model yo'q → eski xatti-harakat
 
         gap = (not face_found) and (not blocked)
-        noface_al = self.noface_sus.update(gap and person_present, now)      # to'sgan
+        noface_al = self.noface_sus.update(gap and person_present and not standing, now)   # to'sgan
+        stand_al = self.stand_sus.update(gap and person_present and standing, now)         # tik turgan
         absent_al = self.absent_sus.update(gap and not person_present, now)  # chiqib ketgan
         phone_al = self.phone_pw.update(phone, now)
         smoke_al = self.smoke_pw.update(smoke, now)
@@ -283,6 +290,7 @@ class FrameAnalyzer:
             elif perclos_warn: active.append("uyquchan")
             if blink_slow:  active.append("pirpirash")
             if ENABLE_NOFACE   and noface_al:   active.append("yuz")
+            if ENABLE_NOFACE   and stand_al:    active.append("turgan")
             if ENABLE_PERSON   and absent_al:   active.append("yoq")
             if ENABLE_SMOKING  and smoke_al:    active.append("sigaret")
             if ENABLE_PHONE    and phone_al:    active.append("telefon")
@@ -316,6 +324,7 @@ class FrameAnalyzer:
         fr.absent_al = absent_al; fr.phone_al = phone_al; fr.smoke_al = smoke_al
         fr.belt_al = belt_al; fr.active = active
         fr.zoom_ear = zoom_ear; fr.zoom_bs = zoom_bs; fr.zoom_veto = zoom_veto
+        fr.standing = standing; fr.stand_al = stand_al
         self.last = fr
         return fr
 
@@ -396,6 +405,10 @@ class FrameAnalyzer:
                     else "  |  odam kadrda: yo'q")
             if self.facerec is not None:
                 det += "  |  " + self.facerec.stats()
+        elif tag == "turgan":
+            d0 = self.stand_sus.since
+            det = ("\nTik turibdi (bosh kadrdan yuqorida): %.0f s  (ostona %.0f s)"
+                   % ((now - d0) if d0 else 0.0, STAND_SEC))
         elif tag == "yoq":
             d0 = self.absent_sus.since
             det = ("\nO'rinda yo'q: %.0f s  (ostona %.0f s)"

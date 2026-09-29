@@ -58,6 +58,13 @@ ENABLE_TAMPER   = True      # kamera to'silishi (qorong'i / tafsilotsiz kadr)
 # ya'ni yuzni to'sib uxlash bilan tizimni aldash mumkin edi.
 ENABLE_NOFACE   = True
 NOFACE_SEC      = 4.0       # shuncha s uzluksiz yuz yo'q → signal
+# 'TIK TURGAN' (2026-09-29): yuz yo'q, lekin odam qutisi kadr TEPASIGA tegadi va
+# baland (bosh kadrdan yuqorida — qo'l uzatish, tugma). Bu yuzni to'sish emas:
+# 'yuz' 4 s da emas, 'turgan' STAND_SEC dan keyin (sinov davrida faqat adminga).
+# Chetga boshini chiqarish bunga tushmaydi (quti tepaga tegmaydi) -> avvalgidek 'yuz'.
+STAND_SEC       = 60.0      # shuncha s uzluksiz tik tursa -> xabar
+STAND_TOP_FRAC  = 0.03      # odam qutisi tepasi kadr balandligining 3% idan yuqorida
+STAND_MIN_H     = 0.5       # odam qutisi kadr balandligining kamida yarmi
 
 # ── Odam bor-yo'qligi (person detection) ──
 # Yuz topilmaganda IKKI xil holat bo'ladi va ularni ajratmasak bo'lmaydi:
@@ -360,7 +367,7 @@ GPS_FIX_MAX_AGE = 120.0      # soniya
 #
 # Uyqu va mikrouyqu ATAYLAB ro'yxatda YO'Q: to'xtagan poyezdda uxlab qolish
 # ham qayd etilishi kerak (jo'nash vaqti kelganda mashinist uyg'oq bo'lsin).
-GPS_GATED_TAGS = {"yoq", "yuz", "chalgish", "telefon", "kamar"}
+GPS_GATED_TAGS = {"yoq", "yuz", "chalgish", "telefon", "kamar", "turgan"}
 # To'xtagan poyezdda (GPS < 10 km/s) ro'yxatdan tashqari buzilishlar FAQAT
 # adminning shaxsiy botiga boradi — guruhga va saytga EMAS (2026-09-26,
 # depoda 0 km/s da 30+ yolg'on uyqu xabari guruh va saytga ketgan edi).
@@ -373,7 +380,7 @@ STOPPED_ADMIN_ONLY = True
 UNKNOWN_ADMIN_ONLY = True
 # Bu turlar HAR DOIM faqat adminning botiga (guruh va sayt EMAS) — sinov davri.
 # 2026-09-29: telefon modeli (v2) endigina ulandi, avval admin kuzatadi.
-ADMIN_ONLY_TAGS = {"telefon"}
+ADMIN_ONLY_TAGS = {"telefon", "turgan"}
 # Deploy skripti shu faylga qisqa izoh yozadi; dastur qayta ishga tushgach
 # uni admin + guruhga "YANGILANDI (deploy)" xabari sifatida yuborib o'chiradi.
 DEPLOY_NOTE_FILE = os.path.join(HERE, "deploy_note.txt")
@@ -480,7 +487,8 @@ TG_MSG = {"uyqu": "Uyqu", "telefon": "Telefon", "sigaret": "Sigaret",
           "yoq": "Haydovchi o'rnida yo'q", "mikrouyqu": "Mikrouyqu",
           "uyquchan": "Uyquchanlik belgilari", "uyquchan_kr": "KRITIK uyquchanlik",
           "pirpirash": "Sekin pirpirash (charchoq)",
-          "kamera": "Kamera to'silgan", "esnash": "Charchoq/esnash"}
+          "kamera": "Kamera to'silgan", "esnash": "Charchoq/esnash",
+          "turgan": "Haydovchi o'rnida emas (tik turibdi)"}
 
 SUBS_FILE = os.path.join(HERE, "subscribers.json")
 
@@ -529,7 +537,7 @@ CONFIRM_SEC = 0.6
 # Uyquga oid turlar RO'YXATGA KIRMAYDI: ular allaqachon uzluksiz vaqt
 # bilan o'lchanadi (EYE_CLOSED_SEC, MICROSLEEP_SEC, PERCLOS_HOLD), ustiga
 # yana kechikish qo'shsak xavfsizlik chegarasi sezdirmay siljib ketadi.
-CONFIRM_TAGS = {"yuz", "yoq", "telefon", "chalgish", "kamar", "sigaret", "esnash"}
+CONFIRM_TAGS = {"yuz", "yoq", "telefon", "chalgish", "kamar", "sigaret", "esnash", "turgan"}
 
 
 # ── Maydon sozlamasi: device.json ─────────────────────────────────────

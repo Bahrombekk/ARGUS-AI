@@ -73,7 +73,20 @@ except NameError:
 try:
     ADMIN_ONLY_TAGS
 except NameError:
-    ADMIN_ONLY_TAGS = {"telefon"}   # bu turlar HAR DOIM faqat adminga (sinov davri)
+    ADMIN_ONLY_TAGS = {"telefon", "turgan"}   # bu turlar HAR DOIM faqat adminga (sinov davri)
+# 'Tik turgan' (yuz yo'q, odam qutisi kadr tepasiga tegadi)
+try:
+    STAND_SEC
+except NameError:
+    STAND_SEC = 60.0          # shuncha s uzluksiz tik tursa -> 'turgan' xabari
+try:
+    STAND_TOP_FRAC
+except NameError:
+    STAND_TOP_FRAC = 0.03     # odam qutisi tepasi kadr balandligining shu ulushidan yuqorida
+try:
+    STAND_MIN_H
+except NameError:
+    STAND_MIN_H = 0.5         # odam qutisi balandligi kadrning kamida shu ulushi
 try:
     PHONE_MODEL_CUSTOM
 except NameError:

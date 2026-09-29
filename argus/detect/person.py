@@ -4,7 +4,7 @@
 Bu fayl app.py dan ajratilgan — kod o'zgartirilmagan.
 """
 
-from config import *
+from argus.settings import *   # noqa: F401,F403
 
 
 
@@ -22,6 +22,11 @@ class PersonDetector:
         self.every = every
         self._last = 0.0
         self.present = True          # boshlanishda "bor" deb hisoblaymiz
+        # 2026-09-29: haydovchi o'rnidan turib qo'l uzatganda boshi kadr tepasidan
+        # chiqib ketadi -> "Yuz ko'rinmayapti" yolg'on buzilish bo'lardi (10:56,
+        # 47 km/s). Odam qutisi kadr TEPASIGA tegsa va baland bo'lsa -> 'tik turgan'.
+        self.standing = False
+        self.boxes = []              # (x1, y1, x2, y2) piksel
 
     def update(self, frame_bgr, now):
         if now - self._last < self.every:
@@ -31,6 +36,11 @@ class PersonDetector:
             r = self.m.predict(source=frame_bgr, conf=self.conf, classes=[0],
                                device="cpu", verbose=False)
             self.present = bool(r and r[0].boxes is not None and len(r[0].boxes))
+            self.boxes = ([tuple(int(v) for v in bx.xyxy[0].tolist()) for bx in r[0].boxes]
+                          if self.present else [])
+            h = frame_bgr.shape[0]
+            self.standing = any(y1 <= STAND_TOP_FRAC * h and (y2 - y1) >= STAND_MIN_H * h
+                                for (x1, y1, x2, y2) in self.boxes)
         except Exception:
             pass                     # xatoda oxirgi holat saqlanadi
         return self.present

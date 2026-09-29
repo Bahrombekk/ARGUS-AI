@@ -9,7 +9,8 @@ BANNER_MSG = {"uyqu": "UYQU! Uyg'oning", "mikrouyqu": "MIKROUYQU aniqlandi",
               "telefon": "TELEFON aniqlandi", "esnash": "CHARCHOQ / esnash",
               "chalgish": "CHALG'ISH! Old tomonga qarang",
               "kamar": "Xavfsizlik KAMARI yo'q", "kamera": "KAMERA TO'SILGAN!",
-              "yuz": "YUZ KO'RINMAYAPTI!", "yoq": "HAYDOVCHI O'RNIDA YO'Q"}
+              "yuz": "YUZ KO'RINMAYAPTI!", "yoq": "HAYDOVCHI O'RNIDA YO'Q",
+              "turgan": "HAYDOVCHI TIK TURIBDI"}
 CRIT_TAGS = {"uyqu", "mikrouyqu", "uyquchan_kr", "kamera"}
 
 
@@ -69,8 +70,9 @@ def build_rows(fr, an, active, gps, cur_mood, now):
                      not fr.distract_al, not face_found))
     # Yuz yo'q, lekin signal chiqmagan bo'lsa (poyezd to'xtagan yoki
     # vaqt hali to'lmagan) — kulrang. Qizil faqat haqiqiy buzilishda.
-    _fa = ("yuz" in active) or ("yoq" in active)
-    rows.append(("Yuz", "BOR" if face_found else "YO'Q",
+    _fa = ("yuz" in active) or ("yoq" in active) or ("turgan" in active)
+    yuz_txt = "BOR" if face_found else ("TIK TURIBDI" if fr.standing else "YO'Q")
+    rows.append(("Yuz", yuz_txt,
                  face_found or not _fa, not face_found and not _fa))
     if ENABLE_MOOD:
         rows.append(("Kayfiyat", cur_mood.upper() if cur_mood else "-", True))
