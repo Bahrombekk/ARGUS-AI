@@ -346,6 +346,12 @@ GPS_GATED_TAGS = {"yoq", "yuz", "chalgish", "telefon", "kamar"}
 # adminning shaxsiy botiga boradi — guruhga va saytga EMAS (2026-09-26,
 # depoda 0 km/s da 30+ yolg'on uyqu xabari guruh va saytga ketgan edi).
 STOPPED_ADMIN_ONLY = True
+# Tezlik NOMA'LUM bo'lsa (GPS javob bermagan yoki o'lchov eskirgan — internet
+# uzilganda) xabarlar ham FAQAT adminga. Nazorat o'chmaydi: buzilish
+# aniqlanadi, ovoz chiqadi, admin oladi; faqat guruh va saytga ketmaydi.
+# 2026-09-29 (user qarori): 28.09 08:35 va 23:16 da internet yo'qligida
+# to'xtagan lok xabarlari guruh/saytga ketgan edi.
+UNKNOWN_ADMIN_ONLY = True
 # Deploy skripti shu faylga qisqa izoh yozadi; dastur qayta ishga tushgach
 # uni admin + guruhga "YANGILANDI (deploy)" xabari sifatida yuborib o'chiradi.
 DEPLOY_NOTE_FILE = os.path.join(HERE, "deploy_note.txt")

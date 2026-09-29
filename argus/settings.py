@@ -52,6 +52,10 @@ try:
     STOPPED_ADMIN_ONLY
 except NameError:
     STOPPED_ADMIN_ONLY = True
+try:
+    UNKNOWN_ADMIN_ONLY
+except NameError:
+    UNKNOWN_ADMIN_ONLY = True   # tezlik noma'lum bo'lsa ham faqat adminga
 # Deploy'dan keyin bir marta yuboriladigan xabar fayli (deploy skripti yozadi)
 try:
     DEPLOY_NOTE_FILE

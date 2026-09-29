@@ -14,7 +14,20 @@ def gate_for_report(active, gps):
     return list(active)
 
 
+def gps_unknown(gps):
+    """Tezlik NOMA'LUM: GPS javob bermagan yoki o'lchov eskirgan (internet
+    uzilganda ham shunday bo'ladi)."""
+    return gps is not None and (gps.speed is None or not gps.fix_fresh())
+
+
 def stopped_route(gps):
-    """To'xtagan poyezd: qolgan buzilishlar FAQAT adminning botiga, guruhga
-    va saytga ketmaydi (depoda kamera oldida turish buzilish emas)."""
-    return bool(STOPPED_ADMIN_ONLY and gps is not None and not gps.is_moving())
+    """Buzilish xabari FAQAT adminning botiga (guruh va sayt EMAS) boradi:
+      - poyezd to'xtagan bo'lsa (depoda kamera oldida turish buzilish emas);
+      - tezlik noma'lum bo'lsa (UNKNOWN_ADMIN_ONLY, 2026-09-29): internet
+        uzilganda GPS eskirib "harakatda" deb hisoblanadi va to'xtagan lok
+        xabarlari guruh/saytga ketib qolardi (28.09 08:35, 23:16)."""
+    if gps is None or not STOPPED_ADMIN_ONLY:
+        return False
+    if not gps.is_moving():
+        return True
+    return bool(UNKNOWN_ADMIN_ONLY and gps_unknown(gps))
