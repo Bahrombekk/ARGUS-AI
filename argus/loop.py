@@ -82,15 +82,24 @@ def _build_detectors(pipe):
 
     # Telefon uchun alohida model (safedrive.pt ning telefon sinfi o'rniga)
     phonedet = None
-    if ENABLE_PHONE_MODEL and os.path.exists(PHONE_MODEL):
-        try:
-            phonedet = PhoneDetector(PHONE_MODEL, PHONE_MODEL_CONF, PHONE_MODEL_EVERY)
-            print(f"Telefon modeli: YOQILDI (conf={PHONE_MODEL_CONF}, "
-                  f"{1/PHONE_MODEL_EVERY:.0f} Hz)")
-        except Exception as e:
-            print("Telefon modeli yuklanmadi:", e)
-    elif ENABLE_PHONE_MODEL:
-        print(f"Telefon modeli: yo'q ({PHONE_MODEL}) — safedrive.pt ishlatiladi")
+    if ENABLE_PHONE and ENABLE_PHONE_MODEL:
+        # v2 (2026-09-26): o'z modelimiz phone_argus.pt bo'lsa — u (klass 0, ostona
+        # PHONE_CUSTOM_CONF); bo'lmasa COCO yolov8n "cell phone" (klass 67).
+        if os.path.exists(PHONE_MODEL_CUSTOM):
+            pm, pc, pconf = PHONE_MODEL_CUSTOM, [0], PHONE_CUSTOM_CONF
+        elif os.path.exists(PERSON_MODEL):
+            pm, pc, pconf = PERSON_MODEL, [PHONE_COCO_CLASS], PHONE_MODEL_CONF
+        else:
+            pm = None
+        if pm:
+            try:
+                phonedet = PhoneDetector(pm, pconf, PHONE_MODEL_EVERY, classes=pc, imgsz=PHONE_IMGSZ)
+                print(f"Telefon modeli: YOQILDI ({os.path.basename(pm)}, klass {pc}, "
+                      f"ostona {pconf}, {1/PHONE_MODEL_EVERY:.0f} Hz, imgsz {PHONE_IMGSZ})")
+            except Exception as e:
+                print("Telefon modeli yuklanmadi:", e)
+        else:
+            print("Telefon modeli: yo'q — safedrive.pt ishlatiladi")
 
     # Yuz yo'qolganda ROI dan qayta qidiruv (qo'l ko'tarilganda, tunda)
     facerec = FaceRecover(pipe, FACE_RECOVER_MARGIN, FACE_RECOVER_MEMORY,
@@ -110,7 +119,8 @@ def main():
     # safedrive.pt YOLO faqat kamar / sigaret / telefon (zaxira) uchun kerak.
     # Ular o'chiq bo'lsa har kadrda ~42 ms (4 yadro) bekorga ketardi
     # (lok o'lchovi 2026-09-29) — model chaqiruvi bo'sh natija bilan almashtiriladi.
-    _phone_via_yolo = ENABLE_PHONE and not (ENABLE_PHONE_MODEL and os.path.exists(PHONE_MODEL))
+    _phone_via_yolo = ENABLE_PHONE and not (ENABLE_PHONE_MODEL and
+                                            (os.path.exists(PHONE_MODEL_CUSTOM) or os.path.exists(PERSON_MODEL)))
     if not (ENABLE_SMOKING or ENABLE_SEATBELT or _phone_via_yolo):
         class _NoYolo:
             def predict(self, *a, **k):
@@ -236,7 +246,9 @@ def main():
 
         # ── Kayfiyat (yuz ifodasi) ──
         if mooddet is not None:
-            mood_ref[0] = mooddet.update(frame, now)
+            # Yuz qutisi asosiy MediaPipe'dan (ikkinchi landmarker ishlamaydi)
+            _mb = facerec.box if (fr.face_found and facerec is not None) else None
+            mood_ref[0] = mooddet.update(frame, now, box=_mb)
             if fr.face_found:
                 mood_hist.append((now, mood_ref[0]))
                 while mood_hist and now - mood_hist[0][0] > REPORT_INTERVAL:

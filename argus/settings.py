@@ -71,6 +71,26 @@ try:
 except NameError:
     STOPPED_ADMIN_ONLY = True
 try:
+    ADMIN_ONLY_TAGS
+except NameError:
+    ADMIN_ONLY_TAGS = {"telefon"}   # bu turlar HAR DOIM faqat adminga (sinov davri)
+try:
+    PHONE_MODEL_CUSTOM
+except NameError:
+    PHONE_MODEL_CUSTOM = os.path.join(HERE, "models", "phone_argus.pt")
+try:
+    PHONE_CUSTOM_CONF
+except NameError:
+    PHONE_CUSTOM_CONF = 0.50
+try:
+    PHONE_COCO_CLASS
+except NameError:
+    PHONE_COCO_CLASS = 67
+try:
+    PHONE_IMGSZ
+except NameError:
+    PHONE_IMGSZ = 480
+try:
     UNKNOWN_ADMIN_ONLY
 except NameError:
     UNKNOWN_ADMIN_ONLY = True   # tezlik noma'lum bo'lsa ham faqat adminga

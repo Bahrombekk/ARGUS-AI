@@ -39,9 +39,18 @@ sent = {"text": [], "photo": [], "video": []}
 
 
 class FakeCap:
+    """Klipni HAQIQIY tezlikda beradi (kadrlar orasida kutadi): loop.py qarorlari
+    devor soati bo'yicha (Sustain 2 s), tez o'qilsa uyqu 'qisqarib' qoladi."""
     def __init__(self, path):
         self.cap = cv2.VideoCapture(path)
+        self.dt = 1.0 / (self.cap.get(cv2.CAP_PROP_FPS) or 15.0)
+        self._t = None
     def read(self):
+        if self._t is not None:
+            rem = self.dt - (time.time() - self._t)
+            if rem > 0:
+                time.sleep(rem)
+        self._t = time.time()
         ok, fr = self.cap.read()
         if not ok:
             raise KeyboardInterrupt      # klip tugadi -> main dan chiqamiz

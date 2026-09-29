@@ -99,7 +99,10 @@ if not QUICK:
         # HUD paneli va banner chap tomonda (x < 32%) — ular tafsilotni sun'iy oshiradi, kesib tashlaymiz
         img = img[:, int(img.shape[1] * 0.32):]
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        mean_b = float(gray.mean()); detail = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+        mean_b = float(gray.mean())
+        # ishlab chiqarish bilan bir xil: YARIM o'lcham, float32 (frame_state.py)
+        small = cv2.resize(gray, (gray.shape[1] // 2, gray.shape[0] // 2), interpolation=cv2.INTER_AREA)
+        detail = float(cv2.Laplacian(small, cv2.CV_32F).var())
         j = TamperJudge(TAMPER_DETAIL_VAR, TAMPER_DARK_MEAN, TAMPER_DROP, TAMPER_DROP_MIN, TAMPER_DROP_FRAC, TAMPER_DETAIL_REF, TAMPER_EMA_ALPHA)
         j.ema = mean_b                      # barqaror holat
         blocked = j.update(mean_b, detail)[0]

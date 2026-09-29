@@ -79,14 +79,23 @@ PERSON_MODEL    = os.path.join(HERE, "models", "yolov8n.pt")
 # ishlaydi. PHONE_WINDOW=2.0 va PHONE_MIN=2 uchun 4 Hz yetarlidan ortiq
 # (2 soniyada 8 namuna), lekin narxi har kadrda ishlatishdan ~4 barobar arzon.
 ENABLE_PHONE_MODEL = True
-PHONE_MODEL        = os.path.join(HERE, "models", "phone_v1.pt")
+PHONE_MODEL        = os.path.join(HERE, "models", "phone_v1.pt")   # eski (v1) — endi ishlatilmaydi
+# v2 (2026-09-26): o'zimiz o'qitgan phone_argus.pt (Open Images "Mobile phone" +
+# COCO "cell phone" ijobiy; krujka/pult/quloqchin/stasionar telefon qattiq negativ;
+# o'z kadrlarimiz). O'LCHANDI (1616 kadr): haqiqiy telefon 0.73-0.89, 878 negativ
+# kadrda eng yuqori ball < 0.30 -> ostona 0.50. Fayl bo'lmasa COCO yolov8n
+# "cell phone" (klass 67, ostona PHONE_MODEL_CONF). imgsz 480 — 640 dan ~1.8x tez.
+PHONE_MODEL_CUSTOM = os.path.join(HERE, "models", "phone_argus.pt")
+PHONE_CUSTOM_CONF  = 0.50
+PHONE_COCO_CLASS   = 67
+PHONE_IMGSZ        = 480
 # 0.25 sinov to'plamida 0 yolg'on signal bergan edi, lekin amalda QORA
 # kiyimdagi odamda adashdi — o'rgatish ma'lumotida odam oq futbolkada edi.
 # 0.40 ga ko'tarildi. Bu VAQTINCHALIK chora: ildiz sabab — model qorong'i
 # shakllarni yetarli ko'rmagan. To'g'ri yechim kabinadan turli kiyim va
 # yorug'likda kadr yig'ib qayta o'rgatish.
 PHONE_MODEL_CONF   = 0.40
-PHONE_MODEL_EVERY  = 0.25    # sekundiga 4 marta
+PHONE_MODEL_EVERY  = 0.5     # sekundiga 2 marta (telefon qo'lda uzoq ushlanadi; CPU tejash)
 PERSON_CONF     = 0.35
 PERSON_EVERY    = 0.5       # yuz yo'q paytida sekundiga ~2 marta tekshiriladi
 ABSENT_SEC      = 12.0      # odam yo'q — shuncha s dan keyin xabar
@@ -362,6 +371,9 @@ STOPPED_ADMIN_ONLY = True
 # 2026-09-29 (user qarori): 28.09 08:35 va 23:16 da internet yo'qligida
 # to'xtagan lok xabarlari guruh/saytga ketgan edi.
 UNKNOWN_ADMIN_ONLY = True
+# Bu turlar HAR DOIM faqat adminning botiga (guruh va sayt EMAS) — sinov davri.
+# 2026-09-29: telefon modeli (v2) endigina ulandi, avval admin kuzatadi.
+ADMIN_ONLY_TAGS = {"telefon"}
 # Deploy skripti shu faylga qisqa izoh yozadi; dastur qayta ishga tushgach
 # uni admin + guruhga "YANGILANDI (deploy)" xabari sifatida yuborib o'chiradi.
 DEPLOY_NOTE_FILE = os.path.join(HERE, "deploy_note.txt")

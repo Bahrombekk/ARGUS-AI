@@ -94,4 +94,15 @@ print("to'xtagan: admin_only=%d xabar, sayt=%d OK" % (len(tg.text) + len(tg.phot
 tg, web, day, ep, clips = run([(5, {"esnash"}), (180, set())])
 assert not any("Tugadi" in t for t, _ in tg.text)
 print("qisqa epizod: tugadi yo'q OK")
+# 5) telefon (ADMIN_ONLY_TAGS): matn/rasm/video/tugadi faqat adminga, saytga yo'q — harakatda ham
+tg, web, day, ep, clips = run([(40, {"telefon"}), (180, set())], stopped=False)
+assert all(a for _, a in tg.text) and all(a for _, a in tg.photo) and all(a for _, a in tg.video), "telefon admin_only bo'lishi kerak"
+assert web.calls == [], web.calls
+print("telefon faqat admin: matn=%d rasm=%d video=%d sayt=%d OK" % (len(tg.text), len(tg.photo), len(tg.video), len(web.calls)))
+# 6) telefon + uyqu birga: rasm guruhga (uyqu bor), telefon matni adminga, uyqu matni guruhga
+tg, web, day, ep, clips = run([(10, {"telefon", "uyqu"}), (180, set())], stopped=False)
+txt = {t.split("Buzilish: ")[1].splitlines()[0]: a for t, a in tg.text if "Buzilish" in t}
+assert txt.get("Telefon") is True and txt.get("Uyqu") is False, txt
+assert all(not a for _, a in tg.photo) and any(u == "uyqu" for u, _, _ in web.calls) and not any(u == "telefon" for u, _, _ in web.calls)
+print("telefon+uyqu: telefon adminga, uyqu guruh+sayt OK")
 print("EPISODES TEST OK")

@@ -185,7 +185,13 @@ class FrameAnalyzer:
         if ENABLE_TAMPER:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             mean_b = float(gray.mean())
-            detail = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+            # Tafsilot YARIM o'lchamda, float32: 9.2 ms -> ~1.5 ms (lok o'lchovi
+            # 2026-09-29). Qiymat to'liq o'lchamdagidan ~1.1-1.4x yuqori chiqadi —
+            # bu to'silishga sezgirlikni biroz PASAYTIRADI (yopiq lens ~0-5,
+            # ostona 12-20 — zaxira katta), ochiq kamerada yolg'onni kamaytiradi.
+            small = cv2.resize(gray, (gray.shape[1] // 2, gray.shape[0] // 2),
+                               interpolation=cv2.INTER_AREA)
+            detail = float(cv2.Laplacian(small, cv2.CV_32F).var())
             # Yorug'likka moslashuvchan qaror — argus/detect/tamper.py
             blocked, _sd, _ld = self.tamper.update(mean_b, detail)
 

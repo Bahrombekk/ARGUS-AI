@@ -42,6 +42,7 @@ class EpisodeTracker:
         self.pending_uid = None     # klip fayli hali ochilmagan bo'lsa — navbatda turadi
         self.pending_det = ""
         self.incident_hist = collections.deque()   # (t, tag) — oxirgi 1 soat
+        self.uid_admin = {}         # UID -> rasm/video faqat adminga ketadimi
         self.ep_hold = EpisodeHold(INCIDENT_REJOIN_SEC)
         # Klip tayyor bo'lganda → Telegram'ga video yuborish
         recorder.on_clip = self._on_clip
@@ -67,12 +68,13 @@ class EpisodeTracker:
             self.clip_sent.add(uid)
             if len(self.clip_sent) > 500:
                 self.clip_sent.clear()
+        adm = self.ctx.stopped_route or bool(uid and self.uid_admin.get(uid))
         self.telegram.send_video(p, f"\U0001F3A5 [{self.ctx.device_name}] hodisa yozuvi\n"
                                     f"Vaqt: {ts_from_name(p)}"
                                     + (f"\nID: {uid}" if uid else ""),
-                                 admin_only=self.ctx.stopped_route)
+                                 admin_only=adm)
         det_c = self.clip_det.pop(p, None) or None
-        if not self.ctx.stopped_route:
+        if not adm:
             self.web.send_incident("klip", "Hodisa yozuvi", video=p, uid=uid,
                                    detail=det_c, extra=self._gps_info())
 
@@ -111,14 +113,15 @@ class EpisodeTracker:
             # Qisqa epizodda bu ortiqcha: boshlanish xabarining o'zi yetarli.
             if INCIDENT_END_MSG and dur >= INCIDENT_END_MIN:
                 lab = TG_MSG.get(t, t)
+                adm = stopped or (t in ADMIN_ONLY_TAGS)
                 tg.send(TXT_END.format(
                     dev=dev, label=lab, dur=human_dur(dur),
                     vaqt=time.strftime('%Y-%m-%d %H:%M:%S'),
-                    uid=self.tg_uid.get(t) or "-"), admin_only=stopped)
+                    uid=self.tg_uid.get(t) or "-"), admin_only=adm)
                 ex = dict(gps.info()) if gps else {}
                 ex["phase"] = "end"
                 ex["duration_sec"] = round(dur, 1)
-                if not stopped:
+                if not adm:
                     web.send_incident(t, lab, uid=self.tg_uid.get(t),
                                       detail="tugadi", extra=ex)
             self.tg_repeat.pop(t, None)
@@ -153,18 +156,20 @@ class EpisodeTracker:
                            + (f"{dur/60:.0f} daqiqadan" if dur < 3600 else f"{dur/3600:.1f} soatdan")
                            + " beri davom etyapti")
                 gtxt = gps.text() if gps else ""
+                # Ba'zi turlar (masalan telefon, hozircha) FAQAT adminga
+                adm = stopped or (tag in ADMIN_ONLY_TAGS)
                 tg.send(f"⚠️ [{dev}] Buzilish: {label}\n"
                         f"Vaqt: {time.strftime('%Y-%m-%d %H:%M:%S')}{det}{rep}"
                         + (f"\n{gtxt}" if gtxt else "")
                         + (f"\nID: {self.cur_uid}" if self.cur_uid else ""),
-                        admin_only=stopped)
+                        admin_only=adm)
                 one = det.strip().replace("\n", "; ")
                 # Qiymat rasm va videoga ham biriktiriladi: ular alohida
                 # so'rov bo'lib ketadi va sayt oxirgisini ustiga yozsa,
                 # o'lchangan qiymat yo'qolib qolmasin.
                 if one:
                     self.cur_detail = (self.cur_detail + " | " + one) if self.cur_detail else one
-                if not stopped:
+                if not adm:
                     web.send_incident(tag, label, uid=self.cur_uid,
                                       detail=one or None, extra=self._gps_info())
         return held_active
@@ -180,14 +185,19 @@ class EpisodeTracker:
             ev = build_evidence()
             snap = rec.snapshot(ev)
             capt = ", ".join(TG_MSG.get(a, a) for a in rep_active)
+            # Epizoddagi BARCHA turlar faqat-admin bo'lsa — rasm/video ham faqat adminga
+            adm = stopped or (bool(rep_active) and all(a in ADMIN_ONLY_TAGS for a in rep_active))
+            self.uid_admin[self.cur_uid] = adm
+            if len(self.uid_admin) > 500:
+                self.uid_admin.clear(); self.uid_admin[self.cur_uid] = adm
             if tg.ok:                     # rasmni ham Telegram'ga
                 tg.send_photo(snap, f"⚠️ [{self.ctx.device_name}] {capt}\n"
                                     f"Vaqt: {time.strftime('%Y-%m-%d %H:%M:%S')}"
                                     + (f"\n{gps.text(short=True)}" if gps else "")
                                     + f"\nID: {self.cur_uid}",
-                              admin_only=stopped)
-            # Saytga — rasm biriktirilgan holda (to'xtaganda yuborilmaydi)
-            if not stopped:
+                              admin_only=adm)
+            # Saytga — rasm biriktirilgan holda (to'xtaganda / faqat-admin turda yuborilmaydi)
+            if not adm:
                 web.send_incident(",".join(sorted(rep_active)), capt, photo=snap,
                                   uid=self.cur_uid, detail=self.cur_detail or None,
                                   extra=self._gps_info())
