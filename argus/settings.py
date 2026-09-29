@@ -74,6 +74,15 @@ try:
     ADMIN_ONLY_TAGS
 except NameError:
     ADMIN_ONLY_TAGS = {"telefon", "turgan"}   # bu turlar HAR DOIM faqat adminga (sinov davri)
+# Odam qutisi haqiqiy haydovchi bo'lishi uchun eng kam balandlik va zona
+try:
+    PERSON_MIN_H
+except NameError:
+    PERSON_MIN_H = 0.25       # kadr balandligining kamida 25% (devordagi rasm ~14% edi)
+try:
+    PERSON_ZONE_X
+except NameError:
+    PERSON_ZONE_X = (0.15, 0.95)   # quti markazi kadr kengligining shu oralig'ida
 # 'Tik turgan' (yuz yo'q, odam qutisi kadr tepasiga tegadi)
 try:
     STAND_SEC

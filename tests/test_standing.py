@@ -20,6 +20,9 @@ for path, exp in cases:
     img = cv2.imread(path); pres = pd.update(img, 100.0 + cases.index((path, exp)))
     print("%-48s odam=%s tik=%s qutilar=%s" % (os.path.basename(path), pres, pd.standing, pd.boxes[:2]))
     assert pd.standing == exp, path
+img = cv2.imread("tests/frames/empty_seat_loco_20260929_173441.jpg")
+pd.update(img, 200.0); print("bo'sh o'rindiq (devorda rasm): odam=%s qutilar=%s" % (pd.present, pd.boxes))
+assert pd.present is False, "bo'sh o'rindiqda odam bo'lmasligi kerak"
 print("PERSON STANDING OK")
 
 # 2) analyzer mantiqi (soxta persondet)

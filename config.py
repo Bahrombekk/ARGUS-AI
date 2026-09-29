@@ -105,6 +105,10 @@ PHONE_MODEL_CONF   = 0.40
 PHONE_MODEL_EVERY  = 0.5     # sekundiga 2 marta (telefon qo'lda uzoq ushlanadi; CPU tejash)
 PERSON_CONF     = 0.35
 PERSON_EVERY    = 0.5       # yuz yo'q paytida sekundiga ~2 marta tekshiriladi
+# Odam qutisi HAYDOVCHI bo'lishi uchun (2026-09-29 17:34: bo'sh o'rindiqda devordagi
+# 91x100 px rasm "odam" deb topilib "Yuz ko'rinmayapti" yolg'on ketdi):
+PERSON_MIN_H    = 0.25      # quti balandligi kadrning kamida 25% i (rasm 14% edi)
+PERSON_ZONE_X   = (0.15, 0.95)   # quti markazi kadr kengligining shu oralig'ida
 ABSENT_SEC      = 12.0      # odam yo'q — shuncha s dan keyin xabar
 
 # Debounce (yolg'on signalga qarshi) — sirpanuvchi oyna + minimal aniqlash soni
