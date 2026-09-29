@@ -135,8 +135,18 @@ EYE_NOD_LIMIT = 22.0        # bazadan shuncha daraja pastga egilsa - ishonchsiz
 EYE_BLINK_CONFIRM = True
 # 2026-09-26 kunduzgi o'lchov: stolga pastga qarab o'tirgan haydovchida (0 km/s)
 # eyeBlink 0.60-0.69 bilan 20+ mikrouyqu/uyqu ketdi; haqiqiy yumuqda 0.77-0.80.
-EYE_BLINK_BS_MIN = 0.7      # 3 kadr medianasi shundan past bo'lsa "yumuq" hisoblanmaydi
+EYE_BLINK_BS_MIN = 0.6      # 3 kadr medianasi shundan past bo'lsa "yumuq" hisoblanmaydi (0.7 haqiqiy yumuqni 0.66-0.69 da o'tkazib yubordi; pastga qarash <= 0.54, zoom tekshiruvi qo'shildi)
 EYE_FACE_CUT_UNRELIABLE = True   # yuz kadr chetida kesilgan -> ko'z o'lchovi ishonchsiz
+# Ko'z ZOOM — "ikkinchi fikr" (2026-09-29): ko'z EYE_ZOOM_AFTER s yumuq deb
+# topilgach yuz atrofi kesib olinib (EYE_ZOOM_MARGIN), kamida EYE_ZOOM_MIN_PX
+# balandlikka kattalashtirilib landmarker qayta ishga tushiriladi. Uyqu faqat
+# ikkala o'lchov (to'liq kadr + zoom) "yumuq" desa hisoblanadi. Uzoq/xira
+# yuzda ko'z 15-20 piksel bo'lib EAR shovqinli — zoom shuni tuzatadi.
+# Xarajat faqat nomzod kadrlarda (~8 ms). Zoomda yuz topilmasa — veto yo'q.
+EYE_ZOOM = True
+EYE_ZOOM_AFTER = 0.5
+EYE_ZOOM_MARGIN = 1.6
+EYE_ZOOM_MIN_PX = 256
 
 # ── PERCLOS — uyquchanlikning jahon standarti ──
 # 1994-yildan beri qo'llaniladi, FHWA/NHTSA uni real vaqtdagi eng ishonchli

@@ -38,11 +38,29 @@ except NameError:
 try:
     EYE_BLINK_BS_MIN
 except NameError:
-    EYE_BLINK_BS_MIN = 0.7    # eyeBlink (3 kadr mediana) shundan past -> "yumuq" EMAS
+    EYE_BLINK_BS_MIN = 0.6    # eyeBlink (3 kadr mediana) shundan past -> "yumuq" EMAS
 try:
     EYE_FACE_CUT_UNRELIABLE
 except NameError:
     EYE_FACE_CUT_UNRELIABLE = True   # yuz kadr chetida kesilgan -> ko'z o'lchovi ishonchsiz
+# Ko'z ZOOM — ikkinchi fikr: yumuq nomzodida yuz atrofini kesib kattalashtirib
+# landmarker qayta ishga tushiriladi (argus/frame_state.py, 2026-09-29)
+try:
+    EYE_ZOOM
+except NameError:
+    EYE_ZOOM = True
+try:
+    EYE_ZOOM_AFTER
+except NameError:
+    EYE_ZOOM_AFTER = 0.5      # ko'z shuncha s yumuq deb topilgach zoom boshlanadi
+try:
+    EYE_ZOOM_MARGIN
+except NameError:
+    EYE_ZOOM_MARGIN = 1.6     # yuz qutisidan necha barobar keng kesim
+try:
+    EYE_ZOOM_MIN_PX
+except NameError:
+    EYE_ZOOM_MIN_PX = 256     # kesim balandligi shundan kichik bo'lsa kattalashtiriladi
 try:
     PERCLOS_MIN_SAMPLES
 except NameError:

@@ -36,7 +36,7 @@ class FrameResult:
                  "perclos_val", "perclos_warn", "perclos_crit", "blink_ms",
                  "blink_slow", "distract_al", "tamper_al", "person_present",
                  "noface_al", "absent_al", "phone_al", "smoke_al", "belt_al",
-                 "active")
+                 "active", "zoom_ear", "zoom_bs", "zoom_veto")
 
     def __init__(self):
         for k in self.__slots__:
@@ -81,6 +81,9 @@ class FrameAnalyzer:
                                      EAR_OPEN_RATIO, EAR_HALF_RATIO)
                          if EAR_ADAPTIVE else None)
         self.tilt_base = self.nod_base = 0.0          # baza to'lmaguncha ishlatilmaydi
+        self._closed_since = None                     # ko'z yumuq nomzodi boshlangan vaqt (zoom uchun)
+        self._zoom_hist = collections.deque(maxlen=3) # oxirgi zoom qarorlari (True = yumuqni tasdiqladi)
+        self.n_zoom = 0; self.n_zoom_veto = 0         # diagnostika
         self.tilt_hist = collections.deque(maxlen=300)
         self.nod_hist = collections.deque(maxlen=300)
         self.last = None                              # oxirgi FrameResult
@@ -91,6 +94,7 @@ class FrameAnalyzer:
         fr.res = res
         eye_state = res.get("eye_state", "unknown")
         face_found = bool(res.get("face_found"))
+        t_open, t_half = EAR_OPEN, EAR_HALF
         # Yuz topilmadi deyilsa — DARHOL ishonmaymiz. Oxirgi ma'lum joy
         # atrofidan kesib qayta qidiramiz: qo'l boshdan yuqori ko'tarilganda
         # detektor butun kadrda yuzni yo'qotadi, parchada esa topadi.
@@ -124,7 +128,6 @@ class FrameAnalyzer:
             med = v[len(v) // 2] if len(v) % 2 else (v[len(v)//2 - 1] + v[len(v)//2]) / 2.0
             # Ostonalar odamga moslashadi: ochiq ko'z darajasi har kimda
             # boshqacha, kameraning burchagi ham ta'sir qiladi.
-            t_open, t_half = EAR_OPEN, EAR_HALF
             if self.ear_base is not None:
                 self.ear_base.update(med, now)
                 t_open, t_half = self.ear_base.thresholds(EAR_OPEN, EAR_HALF)
@@ -189,6 +192,29 @@ class FrameAnalyzer:
         # Debounce / sustain (SafeDrive aniqlashi ustida)
         # Bosh pastga egilgan bo'lsa ko'z o'lchovi ishonchsiz — uyqu o'lchanmaydi
         eye_ok = eye_closed and eye_reliable and blink_sure
+        # ZOOM — ikkinchi fikr: nomzod EYE_ZOOM_AFTER s davom etgach yuz atrofi
+        # kesib kattalashtiriladi va o'sha kesimda EAR + eyeBlink qayta o'lchanadi.
+        zoom_ear = zoom_bs = None; zoom_veto = False
+        if eye_ok:
+            if self._closed_since is None:
+                self._closed_since = now
+            if EYE_ZOOM and now - self._closed_since >= EYE_ZOOM_AFTER:
+                zoom_ear, zoom_bs = self._zoom_eyes(frame, res)
+                if zoom_ear is not None:
+                    self.n_zoom += 1
+                    z_closed = zoom_ear < t_half
+                    z_sure = (zoom_bs is None) or (zoom_bs >= EYE_BLINK_BS_MIN)
+                    self._zoom_hist.append(bool(z_closed and z_sure))
+                    # Bitta kadrlik kelishmovchilik uzluksiz hisoblagichni
+                    # buzmasin (haqiqiy yumuqda 10-47 zoomdan 1-2 tasi 0.6 dan
+                    # pastga tushdi): oxirgi 3 zoomdan kamida 2 tasi rad etsa — veto.
+                    if len(self._zoom_hist) >= 2 and sum(1 for v in self._zoom_hist if not v) >= 2:
+                        zoom_veto = True
+                        self.n_zoom_veto += 1
+                        eye_ok = False
+        else:
+            self._closed_since = None
+            self._zoom_hist.clear()
         drowsy_al = self.eye_sus.update(eye_ok, now)
         micro_al = self.micro_sus.update(eye_ok, now)
         yawn_al = self.yawn_sus.update(yawn, now)
@@ -283,8 +309,47 @@ class FrameAnalyzer:
         fr.person_present = person_present; fr.noface_al = noface_al
         fr.absent_al = absent_al; fr.phone_al = phone_al; fr.smoke_al = smoke_al
         fr.belt_al = belt_al; fr.active = active
+        fr.zoom_ear = zoom_ear; fr.zoom_bs = zoom_bs; fr.zoom_veto = zoom_veto
         self.last = fr
         return fr
+
+    # ------------------------------------------------------------------
+    def _zoom_eyes(self, frame, res):
+        """Yuz atrofini kesib kattalashtirib landmarker'ni qayta ishga tushiradi.
+        Qaytadi: (ear, eyeBlink) yoki (None, None) — yuz topilmasa/xato bo'lsa."""
+        try:
+            box = None
+            if self.facerec is not None and self.facerec.box is not None:
+                box = self.facerec.box
+            else:
+                lm = res.get("landmarks")
+                if lm:
+                    h0, w0 = frame.shape[:2]
+                    xs = [p.x * w0 for p in lm]; ys = [p.y * h0 for p in lm]
+                    box = (min(xs), min(ys), max(xs), max(ys))
+            if box is None:
+                return None, None
+            h, w = frame.shape[:2]
+            x1, y1, x2, y2 = box
+            cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+            bw, bh = (x2 - x1) * EYE_ZOOM_MARGIN, (y2 - y1) * EYE_ZOOM_MARGIN
+            a = max(0, int(cx - bw / 2)); b_ = max(0, int(cy - bh / 2))
+            c = min(w, int(cx + bw / 2)); d = min(h, int(cy + bh / 2))
+            if c - a < 40 or d - b_ < 40:
+                return None, None
+            crop = frame[b_:d, a:c]
+            if crop.shape[0] < EYE_ZOOM_MIN_PX:
+                s = float(EYE_ZOOM_MIN_PX) / crop.shape[0]
+                crop = cv2.resize(crop, None, fx=s, fy=s, interpolation=cv2.INTER_CUBIC)
+            r = self.pipe._run_mediapipe(crop)
+            if not r.get("face_found"):
+                return None, None
+            zb = None
+            if self.blend is not None:
+                zb = self.blend.cues().get("blink")
+            return float(r.get("ear") or 0.0), zb
+        except Exception:
+            return None, None
 
     # ------------------------------------------------------------------
     def report_set(self, active, now):
@@ -304,7 +369,10 @@ class FrameAnalyzer:
         elif tag in ("uyqu", "mikrouyqu") and self.eye_sus.since:
             det = f"\nKo'z yumuq: {now - self.eye_sus.since:.1f} s"
             if fr.blink_bs is not None:
-                det += f"  (eyeBlink {fr.blink_bs:.2f})"
+                det += f"  (eyeBlink {fr.blink_bs:.2f}"
+                if fr.zoom_bs is not None:
+                    det += f", zoom {fr.zoom_bs:.2f}"
+                det += ")"
         elif tag == "telefon" and self.phonedet is not None:
             el = self.grace.elapsed("telefon", now)
             det = f"\nIshonch: {self.phonedet.score:.2f}"
