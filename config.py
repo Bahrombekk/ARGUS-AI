@@ -239,6 +239,16 @@ BASE_MIN = 45               # baza mediana uchun kamida shuncha namuna (isinish)
 TAMPER_DARK_MEAN = 15.0     # o'rtacha yorug'lik shundan past → qorong'i (lok 2026-09-25: tunda 13.7 normal)
 TAMPER_DETAIL_VAR = 20.0    # Laplacian dispersiyasi shundan past → tafsilotsiz (lok tunda 27-42 normal)
 TAMPER_SEC = 8.0            # shuncha s uzluksiz to'silgan → signal (qisqa qorong'ilashish emas)
+# Yorug'likka moslashuvchan qaror (argus/detect/tamper.py, 2026-09-29):
+#  - tafsilot ostonasi = TAMPER_DETAIL_VAR * min(1, yorug'lik/TAMPER_DETAIL_REF);
+#    yorug'lik < TAMPER_DARK_MEAN bo'lsa tafsilot bo'yicha hukm chiqarilmaydi
+#    (tunda yorug'lik 2-6 da tafsilot 14-20 normal — 17 yolg'on xabar bo'lgan edi).
+#  - keskin tushish ostonasi = min(TAMPER_DROP, max(TAMPER_DROP_MIN, TAMPER_DROP_FRAC*EMA)).
+TAMPER_DROP = 40.0          # yorug' kabinada: EMA'dan shuncha keskin tushsa → yopilish
+TAMPER_DROP_MIN = 15.0      # xira kabinada eng kam tushish
+TAMPER_DROP_FRAC = 0.5      # EMA ning ulushi
+TAMPER_DETAIL_REF = 60.0    # shu yorug'likdan past bo'lsa tafsilot ostonasi proporsional
+TAMPER_EMA_ALPHA = 0.02     # yorug'lik EMA (~3 s @18 FPS)
 
 # ── Rasm va video yozib olish ──
 RECORD_DIR = os.path.join(HERE, "records")

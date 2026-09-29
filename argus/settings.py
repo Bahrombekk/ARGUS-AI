@@ -18,6 +18,18 @@ try:
     TAMPER_EMA_ALPHA
 except NameError:
     TAMPER_EMA_ALPHA = 0.02   # ~3 s vaqt doimiysi @18 FPS
+try:
+    TAMPER_DROP_MIN
+except NameError:
+    TAMPER_DROP_MIN = 15.0    # keskin tushish: eng kam birlik (xira kabina)
+try:
+    TAMPER_DROP_FRAC
+except NameError:
+    TAMPER_DROP_FRAC = 0.5    # keskin tushish: EMA ning ulushi
+try:
+    TAMPER_DETAIL_REF
+except NameError:
+    TAMPER_DETAIL_REF = 60.0  # shu yorug'likdan past bo'lsa tafsilot ostonasi proporsional kamayadi
 # Ko'z yumuqligini blendshape bilan tasdiqlash (argus/detect/eyes.py)
 try:
     EYE_BLINK_CONFIRM

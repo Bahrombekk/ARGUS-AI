@@ -36,7 +36,13 @@ class FaceRecover:
     #      faylga saqlanadi — qayta ishga tushganda ham bor),
     #   3) hech narsa bo'lmasa kadr markazi.
     SEAT_ALPHA = 0.02             # sekin o'rganish (~50 kadr = 3 s @18 FPS)
-    SEAT_SAVE_EVERY = 300.0       # faylga necha s da bir yoziladi
+    SEAT_SAVE_EVERY = 60.0        # faylga necha s da bir yoziladi (elektr tez-tez uziladi)
+    # 2026-09-29: elektr har 30-60 daq uzilgani uchun o'rindiq 20 kadrdan keyin
+    # saqlanib, chap yuqori burchakdagi noto'g'ri joy (102,78,302,285) keyingi
+    # sessiyalarga o'tib ketdi. Endi: kamida SEAT_MIN_N namuna, joy kadr
+    # markaziy qismida bo'lishi shart, uzoq vaqt boshqa joyda topilsa qayta o'rganiladi.
+    SEAT_MIN_N = 400              # saqlash/yuklash uchun eng kam namuna (~25 s yuz)
+    SEAT_FAR_N = 200              # shuncha ketma-ket "uzoq" topilish -> qayta o'rganish
     # Yuz shuncha s dan ko'p yo'qolgan bo'lsa qayta qidiruv HAR kadrda:
     # 0.15 s cheklovi tunda topishni 50% ga bog'lab qo'ygan edi (klip
     # o'lchovi). Qo'shimcha xarajat faqat yuz yo'q paytida (~10 ms/kadr).
@@ -65,21 +71,14 @@ class FaceRecover:
         self._seat_saved_t = 0.0
         self.seat_hits = 0        # o'rindiq ROI necha marta yordam berdi
         self.full_t = -1e9        # yuz TO'LIQ kadrda oxirgi marta ko'ringan vaqt
+        self._far_n = 0           # o'rindiqdan uzoq topilishlar ketma-ketligi
+        self._seat_checked = False
         # Diagnostika hisoblagichlari (jurnaldagi FPS satrida chiqadi)
         self.n_full = 0           # yuz to'liq kadrda topilgan kadrlar
         self.n_try = 0            # qayta qidiruv urinishlari (kadr)
         self.n_skip = 0           # cheklov tufayli o'tkazib yuborilgan
         self.n_ok = {"last": 0, "seat": 0, "wide": 0, "center": 0}
         self.n_fail = 0
-
-    def stats(self, reset=False):
-        s = ("yuz: to'liq %d | ROI urinish %d, o'tkazildi %d | topildi last %d seat %d wide %d center %d | topilmadi %d"
-             % (self.n_full, self.n_try, self.n_skip, self.n_ok["last"],
-                self.n_ok["seat"], self.n_ok["wide"], self.n_ok["center"], self.n_fail))
-        if reset:
-            self.n_full = self.n_try = self.n_skip = self.n_fail = 0
-            self.n_ok = {k: 0 for k in self.n_ok}
-        return s
         # Asosiy fayl, bo'lmasa/buzilgan bo'lsa zaxira (.bak) — elektr uzilishi
         # yozish paytiga to'g'ri kelsa fayl yo'qolib/NUL bo'lib qolgan (19:45).
         if seat_file:
@@ -91,7 +90,8 @@ class FaceRecover:
                         d = json.load(fh)
                     s = d.get("seat")
                     if (s and len(s) == 4 and 40 <= s[2] - s[0] <= 600
-                            and 40 <= s[3] - s[1] <= 600 and int(d.get("n", 0)) >= 20):
+                            and 40 <= s[3] - s[1] <= 600
+                            and int(d.get("n", 0)) >= self.SEAT_MIN_N):
                         self.seat = tuple(float(v) for v in s)
                         self.seat_n = int(d.get("n", 0))
                         print("O'rindiq ROI yuklandi: %s (n=%d) <- %s"
@@ -104,14 +104,45 @@ class FaceRecover:
             if self.seat is None:
                 print("O'rindiq ROI yo'q — yangidan o'rganiladi")
 
-    def _learn_seat(self, box, now):
+    def stats(self, reset=False):
+        s = ("yuz: to'liq %d | ROI urinish %d, o'tkazildi %d | topildi last %d seat %d wide %d center %d | topilmadi %d"
+             % (self.n_full, self.n_try, self.n_skip, self.n_ok["last"],
+                self.n_ok["seat"], self.n_ok["wide"], self.n_ok["center"], self.n_fail))
+        if reset:
+            self.n_full = self.n_try = self.n_skip = self.n_fail = 0
+            self.n_ok = {k: 0 for k in self.n_ok}
+        return s
+
+    def _seat_plausible(self, box, w, h):
+        """O'rindiq qutisi kadrning markaziy qismida bo'lishi kerak (kamera
+        haydovchiga qaratilgan). Chetdagi 'yuz' — poster, aks yoki xato."""
+        x1, y1, x2, y2 = box
+        cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+        return (0.2 * w <= cx <= 0.8 * w and 0.2 * h <= cy <= 0.9 * h
+                and 40 <= x2 - x1 <= 600 and 40 <= y2 - y1 <= 600)
+
+    def _learn_seat(self, box, now, w=None, h=None):
+        if w and h and not self._seat_plausible(box, w, h):
+            return                       # chetdagi topilish o'rindiqni buzmasin
         if self.seat is None:
             self.seat = tuple(box)
+            self._far_n = 0
         else:
-            a = self.SEAT_ALPHA
-            self.seat = tuple(s * (1 - a) + v * a for s, v in zip(self.seat, box))
+            # Uzoq vaqt boshqa joyda topilsa — haydovchi joyi o'zgargan yoki
+            # eski qiymat noto'g'ri: qayta o'rganamiz
+            sx = (self.seat[0] + self.seat[2]) / 2.0; sy = (self.seat[1] + self.seat[3]) / 2.0
+            bx = (box[0] + box[2]) / 2.0; by = (box[1] + box[3]) / 2.0
+            far = (abs(sx - bx) > 0.25 * (w or 1280)) or (abs(sy - by) > 0.25 * (h or 720))
+            self._far_n = (self._far_n + 1) if far else 0
+            if self._far_n >= self.SEAT_FAR_N:
+                print("O'rindiq ROI qayta o'rganildi: %s -> %s"
+                      % (tuple(int(v) for v in self.seat), tuple(int(v) for v in box)))
+                self.seat = tuple(box); self.seat_n = 0; self._far_n = 0
+            else:
+                a = self.SEAT_ALPHA
+                self.seat = tuple(s * (1 - a) + v * a for s, v in zip(self.seat, box))
         self.seat_n += 1
-        if (self.seat_file and self.seat_n >= 20
+        if (self.seat_file and self.seat_n >= self.SEAT_MIN_N
                 and now - self._seat_saved_t >= self.SEAT_SAVE_EVERY):
             self._seat_saved_t = now
             try:
@@ -141,7 +172,7 @@ class FaceRecover:
         self.box_t = now
         self.full_t = now
         self.n_full += 1
-        self._learn_seat(self.box, now)
+        self._learn_seat(self.box, now, w, h)
 
     def _note_box(self, box, now):
         self.box = box
@@ -165,6 +196,12 @@ class FaceRecover:
         self.n_try += 1
 
         h, w = frame.shape[:2]
+        if not self._seat_checked:
+            self._seat_checked = True
+            if self.seat is not None and not self._seat_plausible(self.seat, w, h):
+                print("O'rindiq ROI rad etildi (kadr chetida): %s — yangidan o'rganiladi"
+                      % (tuple(int(v) for v in self.seat),))
+                self.seat = None; self.seat_n = 0
         # Nomzod qutilar: oxirgi joy -> o'rindiq -> keng o'rindiq -> markaz.
         # Har biri sinaladi (bir xil kesim ikki marta emas); xarajat faqat
         # yuz topilmagan kadrda (~7 ms har nomzod).
@@ -217,7 +254,7 @@ class FaceRecover:
             xs = [a + p.x * cw for p in lm]
             ys = [b + p.y * ch for p in lm]
             self._note_box((min(xs), min(ys), max(xs), max(ys)), now)
-            self._learn_seat(self.box, now)
+            self._learn_seat(self.box, now, w, h)
 
         self.saved += 1
         return {"eye_state": r.get("eye_state", "unknown"),

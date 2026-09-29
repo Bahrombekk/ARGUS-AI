@@ -23,6 +23,7 @@ from argus.detect.windows import PresenceWindow, Sustain
 from argus.detect.drowsy import Perclos, BlinkTracker, EarBaseline
 from argus.detect.eyes import BlinkConfirm
 from argus.detect.reverify import Confirm, Grace
+from argus.detect.tamper import TamperJudge
 from argus.utils import human_dur
 
 
@@ -57,7 +58,9 @@ class FrameAnalyzer:
         self.yawn_sus = Sustain(YAWN_SEC)
         self.distract_sus = Sustain(DISTRACT_SEC)
         self.tamper_sus = Sustain(TAMPER_SEC)
-        self.tamper_bright_ema = None   # tamper: yorug'lik EMA (keskin tushishni aniqlash)
+        self.tamper = TamperJudge(TAMPER_DETAIL_VAR, TAMPER_DARK_MEAN, TAMPER_DROP,
+                                  TAMPER_DROP_MIN, TAMPER_DROP_FRAC, TAMPER_DETAIL_REF,
+                                  TAMPER_EMA_ALPHA)
         self.noface_sus = Sustain(NOFACE_SEC)
         # Yangi buzilishni e'lon qilishdan oldin qayta tasdiqlash
         self.confirm = Confirm(CONFIRM_SEC, CONFIRM_TAGS) if CONFIRM_SEC > 0 else None
@@ -180,13 +183,8 @@ class FrameAnalyzer:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             mean_b = float(gray.mean())
             detail = float(cv2.Laplacian(gray, cv2.CV_64F).var())
-            if self.tamper_bright_ema is None:
-                self.tamper_bright_ema = mean_b
-            sudden_dark = ((self.tamper_bright_ema - mean_b) > TAMPER_DROP
-                           and mean_b < TAMPER_DARK_MEAN)
-            blocked = (detail < TAMPER_DETAIL_VAR) or sudden_dark
-            # sekin EMA (~3 s @18 FPS): asta qorong'ilashish drop hisoblanmaydi
-            self.tamper_bright_ema += (mean_b - self.tamper_bright_ema) * TAMPER_EMA_ALPHA
+            # Yorug'likka moslashuvchan qaror — argus/detect/tamper.py
+            blocked, _sd, _ld = self.tamper.update(mean_b, detail)
 
         # Debounce / sustain (SafeDrive aniqlashi ustida)
         # Bosh pastga egilgan bo'lsa ko'z o'lchovi ishonchsiz — uyqu o'lchanmaydi
