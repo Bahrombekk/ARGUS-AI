@@ -11,6 +11,10 @@ import uuid
 import threading
 import collections
 from config import *
+try:
+    MEDIA_KEEP_SEC
+except NameError:
+    MEDIA_KEEP_SEC = 86400.0   # rasm/video internet yo'q bo'lsa shuncha s saqlanadi
 from argus.utils import human_delay
 try:
     import requests
@@ -229,18 +233,39 @@ class Telegram:
                     try: self.outbox.remove(item)
                     except ValueError: pass
                     self._save_outbox()
-            except Exception:
+            except Exception as e:
+                # TARMOQ xatosi (internet yo'q, taymaut) — bu Telegram'ning rad etishi
+                # emas: media SAQLANADI va internet qaytguncha kutiladi (2026-09-29:
+                # lokda internet tez-tez uzilib, rasm/video 6 urinishda tashlanib
+                # ketardi, matn esa yetib borardi). Faqat API xatosi (4xx, masalan
+                # fayl juda katta) 6 urinishdan keyin tashlanadi. Media 24 soatdan
+                # eski bo'lsa ham tashlanadi (dalil endi kech).
+                net = (requests is not None and
+                       isinstance(e, (requests.ConnectionError, requests.Timeout)))
+                if net:
+                    item["net_fail"] = item.get("net_fail", 0) + 1
+                    age = time.time() - item.get("ts", time.time())
+                    if item["kind"] in ("photo", "video") and age > MEDIA_KEEP_SEC:
+                        with self._olock:
+                            try: self.outbox.remove(item)
+                            except ValueError: pass
+                            self._save_outbox()
+                        print("Telegram: %s %.0f soat kutdi, tashlandi (internet yo'q)"
+                              % (item["kind"], age / 3600))
+                        continue
+                    time.sleep(min(60, 10 * item["net_fail"]))   # internet qaytguncha
+                    continue
                 item["tries"] = item.get("tries", 0) + 1
                 if item["kind"] in ("photo", "video") and item["tries"] >= 6:
-                    # Media navbatni abadiy bloklamasin: 6 urinishdan keyin tashlanadi
+                    # Telegram rad etdi (4xx) — 6 urinishdan keyin tashlanadi
                     with self._olock:
                         try: self.outbox.remove(item)
                         except ValueError: pass
                         self._save_outbox()
-                    print("Telegram: %s %d urinishdan keyin tashlandi (tarmoq)"
-                          % (item["kind"], item["tries"]))
+                    print("Telegram: %s %d urinishdan keyin tashlandi (%s)"
+                          % (item["kind"], item["tries"], repr(e)[:80]))
                     continue
-                time.sleep(10)          # offline — internet qaytганда qayta urinadi
+                time.sleep(10)
 
     def _save_outbox(self):
         try:
