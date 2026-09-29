@@ -107,6 +107,16 @@ def main():
                         detect_phone=ENABLE_PHONE, detect_seatbelt=ENABLE_SEATBELT,
                         detect_smoking=ENABLE_SMOKING, detect_yawn=ENABLE_YAWN)
     pipe.start()
+    # safedrive.pt YOLO faqat kamar / sigaret / telefon (zaxira) uchun kerak.
+    # Ular o'chiq bo'lsa har kadrda ~42 ms (4 yadro) bekorga ketardi
+    # (lok o'lchovi 2026-09-29) — model chaqiruvi bo'sh natija bilan almashtiriladi.
+    _phone_via_yolo = ENABLE_PHONE and not (ENABLE_PHONE_MODEL and os.path.exists(PHONE_MODEL))
+    if not (ENABLE_SMOKING or ENABLE_SEATBELT or _phone_via_yolo):
+        class _NoYolo:
+            def predict(self, *a, **k):
+                return []
+        pipe._model = _NoYolo()
+        print("YOLO safedrive.pt: O'CHIRILDI (kamar/sigaret/telefon-zaxira kerak emas) — ~40 ms/kadr tejaladi")
     # eyeBlink blendshape — EAR ning "pastga qarash" xatosini ajratadi
     blend = BlendTap.attach(pipe) if EYE_BLINK_CONFIRM else None
 
