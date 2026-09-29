@@ -23,3 +23,5 @@ __pycache__/
 *.pyc
 tests/_*
 config_local.py
+tests/clips/
+tests/frames/

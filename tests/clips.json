@@ -1,0 +1,175 @@
+{
+ "_izoh": "Etalon kliplar/kadrlar tests/clips va tests/frames da (git'da YO'Q, hajm ~36 MB). Bu ro'yxat va md5 git'da. Yangi holat qo'shish: faylni nusxalang, shu ro'yxatga qo'shing, kutilgan natijani yozing. Kalitlar: uyqu_min (kamida shuncha uyqu kadr), sleep_max (uyqu+mikrouyqu ko'pi bilan), face_min_pct (yuz topilgan kadr ulushi), kamera_max.",
+ "smoke_clip": "real_sleep_desk_20260910_164113.mp4",
+ "clips": [
+  {
+   "file": "real_sleep_desk_20260910_164113.mp4",
+   "kind": "real_sleep",
+   "desc": "Stol: ko'z haqiqatan yumuq (10.09)",
+   "md5": "5ec3e6c755ef04cd9a0d5dc7941644de",
+   "expect": {
+    "uyqu_min": 1,
+    "face_min_pct": 40
+   }
+  },
+  {
+   "file": "real_sleep_desk_headdown_20260914_150200.mp4",
+   "kind": "real_sleep",
+   "desc": "Stol: bosh past + ko'z yumuq (14.09)",
+   "md5": "17ef980110959667ea947f2c0da8ddb5",
+   "expect": {
+    "uyqu_min": 1
+   }
+  },
+  {
+   "file": "real_sleep_loco_20260928_112410.mp4",
+   "kind": "real_sleep",
+   "desc": "Lok 28.09 11:24:15, 14 km/s, ko'z yumuq (eyeBlink 0.72, EAR 0.03)",
+   "md5": "37b6bd664f7f00ebee886e1d1972eac6",
+   "expect": {
+    "uyqu_min": 1,
+    "face_min_pct": 80
+   }
+  },
+  {
+   "file": "real_sleep_loco_20260928_112439.mp4",
+   "kind": "real_sleep",
+   "desc": "Lok 28.09 11:24:46, 17 km/s, ko'z yumuq",
+   "md5": "59810d238df8b4bcff5d06bcbcf09204",
+   "expect": {
+    "uyqu_min": 1,
+    "face_min_pct": 80
+   }
+  },
+  {
+   "file": "lookdown_loco_20260926_004022.mp4",
+   "kind": "lookdown",
+   "desc": "Lok 26.09 00:40, 0 km/s, stolga pastga qarash (ko'z ochiq) — avval uyqu/PERCLOS yolg'on bergan",
+   "md5": "41c4dcb27b238a334410d9d87dd8cd6c",
+   "expect": {
+    "sleep_max": 0,
+    "face_min_pct": 60
+   }
+  },
+  {
+   "file": "lookdown_loco_20260926_003459.mp4",
+   "kind": "lookdown",
+   "desc": "Lok 26.09 00:35, pastga qarash",
+   "md5": "a13be24529e983d637b578feb901d89f",
+   "expect": {
+    "sleep_max": 0
+   }
+  },
+  {
+   "file": "lookdown_chaotic_loco_20260926_003300.mp4",
+   "kind": "lookdown",
+   "desc": "Lok 26.09 00:33, yuz kadr chetida, harakat — PERCLOS yolg'on bergan",
+   "md5": "4149f6efe7ced3d11dc08dd9a7bd6a9a",
+   "expect": {
+    "sleep_max": 0,
+    "kamera_max": 0
+   }
+  },
+  {
+   "file": "lookdown_close_loco_20260926_003208.mp4",
+   "kind": "lookdown",
+   "desc": "Lok 26.09 00:32, kameraga juda yaqin, pastga qarash",
+   "md5": "b6bf8794f05338fc0567b46ca793b37c",
+   "expect": {
+    "sleep_max": 0
+   }
+  },
+  {
+   "file": "lookdown_loco_20260928_113037.mp4",
+   "kind": "lookdown",
+   "desc": "Lok 28.09 11:30, pastga qarash",
+   "md5": "9a37e02ec0b4e404b65aeaefa08da9ea",
+   "expect": {
+    "sleep_max": 0
+   }
+  },
+  {
+   "file": "night_face_loco_20260926_014553.mp4",
+   "kind": "night_face",
+   "desc": "Lok 26.09 01:45, tun (yorug'lik 35), haydovchi o'rnida — to'liq kadrda 3% edi",
+   "md5": "2246e7c4eb84a5c58bcb3c7d44c87c46",
+   "expect": {
+    "face_min_pct": 70,
+    "sleep_max": 0,
+    "kamera_max": 0
+   }
+  },
+  {
+   "file": "night_face_loco_20260926_015324.mp4",
+   "kind": "night_face",
+   "desc": "Lok 26.09 01:53, tun",
+   "md5": "790f223492f1c85952b901e53406be0e",
+   "expect": {
+    "face_min_pct": 65,
+    "sleep_max": 0,
+    "kamera_max": 0
+   }
+  },
+  {
+   "file": "night_face_loco_20260926_192212.mp4",
+   "kind": "night_face",
+   "desc": "Lok 26.09 19:22, tun, haydovchi tepaga qaraydi",
+   "md5": "03a25f7fda0608fe6c51d9f2bda98609",
+   "expect": {
+    "face_min_pct": 80,
+    "sleep_max": 0,
+    "kamera_max": 0
+   }
+  }
+ ],
+ "frames": [
+  {
+   "file": "night_camera_open_20260929_005638.jpg",
+   "desc": "Lok 29.09 00:56, xira qizil yorug'lik, haydovchi ko'rinadi — 'kamera to'silgan' yolg'on bergan",
+   "md5": "c2e6fc257914f8a757baf9da52752423",
+   "expect": {
+    "blocked": false
+   }
+  },
+  {
+   "file": "night_camera_open_20260929_044406.jpg",
+   "desc": "Lok 29.09 04:44, butunlay qorong'i kabina (yorug'lik 5) — kamera ochiq",
+   "md5": "90e2a855b139d78944a0281404570096",
+   "expect": {
+    "blocked": false
+   }
+  },
+  {
+   "file": "night_camera_open_20260926_013334.jpg",
+   "desc": "Lok 26.09 01:33, tun",
+   "md5": "1aec06eb3f2bf5127f1c87806c3e9ff3",
+   "expect": {
+    "blocked": false
+   }
+  },
+  {
+   "file": "night_camera_open_20260926_192212.jpg",
+   "desc": "Lok 26.09 19:22, tun",
+   "md5": "ac3a1955ac30df125e42564d66218d8d",
+   "expect": {
+    "blocked": false
+   }
+  },
+  {
+   "file": "day_camera_open_20260926_003301.jpg",
+   "desc": "Lok 26.09 00:33, yorug' kabina",
+   "md5": "4f5a40c89322b28adee40f1865469e85",
+   "expect": {
+    "blocked": false
+   }
+  },
+  {
+   "file": "day_face_cut_20260928_083521.jpg",
+   "desc": "Lok 28.09 08:35, yuz pastdan kesilgan (kamera juda yaqin) — kamera ochiq",
+   "md5": "6189415c7114d86c64e6236feedfc518",
+   "expect": {
+    "blocked": false
+   }
+  }
+ ]
+}

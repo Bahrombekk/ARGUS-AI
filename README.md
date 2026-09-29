@@ -81,3 +81,13 @@ Token va parollar kodda emas. `secrets.example.json` ni `secrets.json` nomi bila
 ```
 
 GPS API uchun `gps_creds.json` (`{"email": "...", "password": "..."}`), qurilma uchun `device.json` (`{"imei": "...", "telegram_poll": true}`) kerak. Bu fayllar `.gitignore` da.
+
+## Testlar
+
+Har deploy'dan oldin:
+
+```bash
+C:\sdv\Scripts\python.exe tests\run_all.py
+```
+
+`--quick` — faqat birlik testlar. To'liq rejim etalon kliplarni (`tests/clips/`, ~36 MB, git'da yo'q; ro'yxat va md5 — `tests/clips.json`) haqiqiy `FrameAnalyzer` orqali o'tkazadi: haqiqiy yumuq → uyqu bo'lishi shart, pastga qarash → uyqu bo'lmasligi shart, tungi kliplar → yuz topilishi, tungi kadrlar → "kamera to'silgan" bo'lmasligi. Yangi holat qo'shish uchun klipni `tests/clips/` ga nusxalab `clips.json` ga kutilgan natija bilan yozish kifoya.
